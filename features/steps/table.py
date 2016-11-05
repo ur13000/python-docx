@@ -12,7 +12,8 @@ from behave import given, then, when
 
 from docx import Document
 from docx.enum.table import (
-    WD_ROW_HEIGHT_RULE, WD_TABLE_ALIGNMENT, WD_TABLE_DIRECTION
+    WD_CELL_ALIGN_VERTICAL, WD_ROW_HEIGHT_RULE, WD_TABLE_ALIGNMENT,
+    WD_TABLE_DIRECTION
 )
 from docx.shared import Inches
 from docx.table import _Column, _Columns, _Row, _Rows
@@ -56,6 +57,19 @@ def given_a_row_collection_having_two_rows(context):
 @given('a table')
 def given_a_table(context):
     context.table_ = Document().add_table(rows=2, cols=2)
+
+
+@given('a table cell having vertical alignment of {state}')
+def given_a_table_cell_having_vertical_alignment_of_state(context, state):
+    table_idx = {
+        'no explicit setting': 0,
+        'bottom':              1,
+        'center':              2,
+        'top':                 3,
+    }[state]
+    document = Document(test_docx('tbl-props'))
+    table = document.tables[table_idx]
+    context.cell = table.cell(0, 0)
 
 
 @given('a table cell having a width of {width}')
@@ -236,6 +250,14 @@ def when_I_merge_from_cell_origin_to_cell_other(context, origin, other):
     a.merge(b)
 
 
+@when('I assign {value} to cell.vertical_alignment')
+def when_I_assign_value_to_cell_vertical_alignment(context, value):
+    new_value = (
+        None if value == 'None' else getattr(WD_CELL_ALIGN_VERTICAL, value)
+    )
+    context.cell.vertical_alignment = new_value
+
+
 @when('I set the cell width to {width}')
 def when_I_set_the_cell_width_to_width(context, width):
     new_value = {'1 inch': Inches(1)}[width]
@@ -256,6 +278,17 @@ def when_I_set_the_table_autofit_to_setting(context, setting):
 
 
 # then =====================================================
+
+@then('cell.vertical_alignment is {value}')
+def then_cell_vertical_alignment_is_value(context, value):
+    expected_value = (
+        None if value == 'None' else getattr(WD_CELL_ALIGN_VERTICAL, value)
+    )
+    actual_value = context.cell.vertical_alignment
+    assert actual_value is expected_value, (
+        'expected %s, got %s' % (expected_value, actual_value)
+    )
+
 
 @then('I can access a collection column by index')
 def then_can_access_collection_column_by_index(context):
